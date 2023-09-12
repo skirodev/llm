@@ -261,9 +261,36 @@ impl Context {
         self.new_tensor_raw(raw)
     }
 
+    /// Creates a new 4D tensor.
+    pub fn new_tensor_4d(&self, typ: Type, ne0: usize, ne1: usize, ne2: usize, ne3: usize) -> Tensor {
+        let raw = unsafe {
+            sys::ggml_new_tensor_4d(
+                self.as_ptr(),
+                typ.into(),
+                usize_to_i64(ne0),
+                usize_to_i64(ne1),
+                usize_to_i64(ne2),
+                usize_to_i64(ne3),
+            )
+        };
+        self.new_tensor_raw(raw)
+    }
+
     /// Creates a new 1D tensor with the specified value.
     pub fn new_f32(&self, x: f32) -> Tensor {
         let raw = unsafe { sys::ggml_new_f32(self.as_ptr(), x) };
+        self.new_tensor_raw(raw)
+    }
+
+    /// Creates a new 1D tensor with the specified value.
+    pub fn new_i32(&self, x: i32) -> Tensor {
+        let raw = unsafe { sys::ggml_new_i32(self.as_ptr(), x) };
+        self.new_tensor_raw(raw)
+    }
+
+    /// Set all values of the tensor with the specified value.
+    pub fn set_f32(&self, a: &Tensor, x: f32) -> Tensor {
+        let raw = unsafe { sys::ggml_set_f32(a.ptr.as_ptr(), x) };
         self.new_tensor_raw(raw)
     }
 
@@ -533,6 +560,21 @@ impl Context {
         self.new_tensor_raw(tensor)
     }
 
+    /// In-place; reshapes `a` in accordance with the specified dimensions.
+    pub fn op_reshape_4d(&self, a: &Tensor, ne0: usize, ne1: usize, ne2: usize, ne3: usize) -> Tensor {
+        let tensor = unsafe {
+            sys::ggml_reshape_4d(
+                self.as_ptr(),
+                a.ptr.as_ptr(),
+                usize_to_i64(ne0),
+                usize_to_i64(ne1),
+                usize_to_i64(ne2),
+                usize_to_i64(ne3),
+            )
+        };
+        self.new_tensor_raw(tensor)
+    }
+
     /// ggml_cont
     pub fn op_cont(&self, a: &Tensor) -> Tensor {
         let tensor = unsafe { sys::ggml_cont(self.as_ptr(), a.ptr.as_ptr()) };
@@ -610,6 +652,24 @@ impl Context {
         self.new_tensor_raw(tensor)
     }
 
+    /// In-place; Gaussian Error Linear Units
+    pub fn op_gelu_inplace(&self, a: &Tensor) -> Tensor {
+        let tensor = unsafe { sys::ggml_gelu_inplace(self.as_ptr(), a.ptr.as_ptr()) };
+        self.new_tensor_raw(tensor)
+    }
+
+    /// Quick Gaussian Error Linear Units
+    pub fn op_gelu_quick(&self, a: &Tensor) -> Tensor {
+        let tensor = unsafe { sys::ggml_gelu_quick(self.as_ptr(), a.ptr.as_ptr()) };
+        self.new_tensor_raw(tensor)
+    }
+
+    /// In-place; Quick Gaussian Error Linear Units
+    pub fn op_gelu_quick_inplace(&self, a: &Tensor) -> Tensor {
+        let tensor = unsafe { sys::ggml_gelu_quick_inplace(self.as_ptr(), a.ptr.as_ptr()) };
+        self.new_tensor_raw(tensor)
+    }
+
     /// flash attention.
     pub fn op_flash_attn(&self, q: &Tensor, k: &Tensor, v: &Tensor, masked: bool) -> Tensor {
         let tensor = unsafe {
@@ -619,6 +679,64 @@ impl Context {
                 k.ptr.as_ptr(),
                 v.ptr.as_ptr(),
                 masked,
+            )
+        };
+        self.new_tensor_raw(tensor)
+    }
+
+    /// Creates a new tensor with the square of `a`.
+    pub fn op_sqr(&self, a: &Tensor) -> Tensor {
+        let tensor = unsafe { sys::ggml_sqr(self.as_ptr(), a.ptr.as_ptr()) };
+        self.new_tensor_raw(tensor)
+    }
+
+    /// Creates a new tensor with the square-root of `a`.
+    pub fn op_sqrt(&self, a: &Tensor) -> Tensor {
+        let tensor = unsafe { sys::ggml_sqrt(self.as_ptr(), a.ptr.as_ptr()) };
+        self.new_tensor_raw(tensor)
+    }
+
+    /// Creates a new tensor with the sum of all elements in `a`.
+    pub fn op_sum(&self, a: &Tensor) -> Tensor {
+        let tensor = unsafe { sys::ggml_sum(self.as_ptr(), a.ptr.as_ptr()) };
+        self.new_tensor_raw(tensor)
+    }
+
+    /// Creates a new tensor with the division of `a` by `b`.
+    pub fn op_div(&self, a: &Tensor, b: &Tensor) -> Tensor {
+        let tensor = unsafe { sys::ggml_div(self.as_ptr(), a.ptr.as_ptr(), b.ptr.as_ptr()) };
+        self.new_tensor_raw(tensor)
+    }
+
+    /// Creates a new tensor with the 2D convolution of `a` and `b` using the specified parameters.
+    pub fn op_conv_2d(&self, a: &Tensor, b: &Tensor, s0: usize, s1: usize, p0: usize, p1: usize, d0: usize, d1: usize) -> Tensor {
+        let tensor = unsafe {
+            sys::ggml_conv_2d(
+                self.as_ptr(),
+                a.ptr.as_ptr(),
+                b.ptr.as_ptr(),
+                usize_to_i32(s0),
+                usize_to_i32(s1),
+                usize_to_i32(p0),
+                usize_to_i32(p1),
+                usize_to_i32(d0),
+                usize_to_i32(d1),
+            )
+        };
+        self.new_tensor_raw(tensor)
+    }
+
+    /// Creates a new tensor with the accumulation of `a` and `b` using the specified parameters.
+    pub fn op_acc(&self, a: &Tensor, b: &Tensor, nb1: usize, nb2: usize, nb3: usize, offset: usize) -> Tensor {
+        let tensor = unsafe {
+            sys::ggml_acc(
+                self.as_ptr(),
+                a.ptr.as_ptr(),
+                b.ptr.as_ptr(),
+                nb1,
+                nb2,
+                nb3,
+                offset,
             )
         };
         self.new_tensor_raw(tensor)

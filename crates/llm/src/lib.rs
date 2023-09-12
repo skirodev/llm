@@ -178,7 +178,8 @@ define_models!(
     (gptneox, "gptneox", GptNeoX, llm_gptneox, "GPT-NeoX"),
     (llama, "llama", Llama, llm_llama, "LLaMA"),
     (mpt, "mpt", Mpt, llm_mpt, "MPT"),
-    (falcon, "falcon", Falcon, llm_falcon, "Falcon")
+    (falcon, "falcon", Falcon, llm_falcon, "Falcon"),
+    (clipvision, "clipvision", ClipVision, llm_clipvision, "ClipVision")
 );
 
 /// Used to dispatch some code based on the model architecture.

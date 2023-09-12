@@ -1,0 +1,15 @@
+[package]
+name = "llm-clipvision"
+version = "0.2.0-dev"
+license = { workspace = true }
+repository = { workspace = true }
+description = "An implementation of Clip for the `llm` ecosystem."
+edition = "2021"
+readme = "../../../README.md"
+
+[dependencies]
+llm-base = { path = "../../llm-base", version = "0.2.0-dev" }
+
+image = "0.24.6"
+ndarray = "0.15.6"
+bytemuck = { workspace = true }

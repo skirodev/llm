@@ -67,6 +67,8 @@
 //! ```
 #![deny(missing_docs)]
 
+mod image;
+pub use image::get_available_images;
 use std::{
     error::Error,
     fmt::{Debug, Display},

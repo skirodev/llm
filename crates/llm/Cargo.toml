@@ -21,6 +21,14 @@ llm-clipvision = { path = "../models/clipvision", optional = true, version = "0.
 serde = { workspace = true }
 tracing = { workspace = true }
 
+# clip
+tokenizers = "0.13.4"
+# image
+image = "*"
+md5 = "*"
+sha2 = "*"
+anyhow = { workspace = true }
+
 [dev-dependencies]
 bytesize = { workspace = true }
 log = { workspace = true }

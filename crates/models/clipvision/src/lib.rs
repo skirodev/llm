@@ -9,7 +9,7 @@ use ggml::Tensor;
 use llm_base::{
     ggml,
     model::{common, HyperparametersWriteError},
-    util, FileType, GraphOutputs, InferenceSession, InferenceSessionConfig, KnownModel, LoadError,
+    util, FileType, GraphOutputs, InferenceSession, InferenceSessionConfig, KnownModel, LoadError, ModelContext,
     ModelParameters, OutputRequest, Regex, TensorLoader, TokenId, Tokenizer,
 };
 
@@ -40,7 +40,7 @@ pub struct ClipVision {
     layers: Vec<Layer>,
 
     // must be kept alive for the model
-    context: Arc<ggml::Context>,
+    context: ModelContext,
 }
 
 unsafe impl Send for ClipVision {}
@@ -135,7 +135,7 @@ impl KnownModel for ClipVision {
             post_ln_b,
             projection,
             layers,
-            context: Arc::new(context),
+            context: context,
         })
     }
 
@@ -213,7 +213,7 @@ impl KnownModel for ClipVision {
             //int batch_size = imgs.size();
             let batch_size = imgs.len();
 
-            let mut gf = ggml::ComputationGraph::new();
+            let mut gf = ctx0.create_compute_graph();
             //std::process::exit(0);
 
             // open image, resize it and make a Tensor out of it

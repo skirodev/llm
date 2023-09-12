@@ -42,6 +42,7 @@ pub struct Image {
     Ok(images)
 }*/
 
+/// Get local available images.
 pub fn get_available_images() -> Result<Vec<Image>, std::io::Error> {
     let dir = r"C:\Users\11048\Pictures\images\pixabay.com\set1";
     let allowed_extensions = vec![

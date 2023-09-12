@@ -270,7 +270,7 @@ dependencies = [
  "flate2",
  "fs2",
  "glob",
- "indicatif",
+ "indicatif 0.16.2",
  "log",
  "rand",
  "reqwest",
@@ -434,6 +434,7 @@ dependencies = [
  "encode_unicode",
  "lazy_static",
  "libc",
+ "unicode-width",
  "windows-sys 0.45.0",
 ]
 
@@ -740,6 +741,9 @@ name = "esaxx-rs"
 version = "0.1.8"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "1f748b253ceca9fed5f42f8b5ceb3851e93102199bc25b64b65369f76e5c0a35"
+dependencies = [
+ "cc",
+]
 
 [[package]]
 name = "exr"
@@ -1198,13 +1202,25 @@ dependencies = [
 
 [[package]]
 name = "indicatif"
+version = "0.15.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "7baab56125e25686df467fe470785512329883aab42696d661247aca2a2896e4"
+dependencies = [
+ "console",
+ "lazy_static",
+ "number_prefix 0.3.0",
+ "regex",
+]
+
+[[package]]
+name = "indicatif"
 version = "0.16.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "2d207dc617c7a380ab07ff572a6e52fa202a2a8f355860ac9c38e23f8196be1b"
 dependencies = [
  "console",
  "lazy_static",
- "number_prefix",
+ "number_prefix 0.4.0",
  "regex",
 ]
 
@@ -1355,8 +1371,10 @@ checksum = "09fc20d2ca12cb9f044c93e3bd6d32d523e6e2ec3db4f7b2939cd99026ecd3f0"
 name = "llm"
 version = "0.2.0-dev"
 dependencies = [
+ "anyhow",
  "bytesize",
  "clap",
+ "image",
  "llm-base",
  "llm-bloom",
  "llm-clipvision",
@@ -1367,11 +1385,14 @@ dependencies = [
  "llm-llama",
  "llm-mpt",
  "log",
+ "md5",
  "rand",
  "rustyline",
  "serde",
  "serde_json",
+ "sha2",
  "spinoff",
+ "tokenizers",
  "tracing",
 ]
 
@@ -1498,7 +1519,7 @@ dependencies = [
  "anyhow",
  "clap",
  "env_logger",
- "indicatif",
+ "indicatif 0.16.2",
  "llm",
  "llm-samplers",
  "log",
@@ -1560,6 +1581,12 @@ dependencies = [
  "autocfg",
  "rawpointer",
 ]
+
+[[package]]
+name = "md5"
+version = "0.7.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "490cc448043f947bae3cbee9c203358d62dbee0db12107a74be5c30ccfd09771"
 
 [[package]]
 name = "memchr"
@@ -1774,6 +1801,12 @@ dependencies = [
  "hermit-abi 0.3.1",
  "libc",
 ]
+
+[[package]]
+name = "number_prefix"
+version = "0.3.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "17b02fc0ff9a9e4b35b3342880f48e896ebf69f2967921fe8646bf5b7125956a"
 
 [[package]]
 name = "number_prefix"
@@ -2681,10 +2714,12 @@ checksum = "aea68938177975ab09da68552b720eac941779ff386baceaf77e0f5f9cea645f"
 dependencies = [
  "aho-corasick 0.7.20",
  "cached-path",
+ "clap",
  "derive_builder",
  "dirs",
  "esaxx-rs",
  "getrandom",
+ "indicatif 0.15.0",
  "itertools 0.9.0",
  "lazy_static",
  "log",

@@ -3,19 +3,22 @@ use std::path::PathBuf;
 
 fn main() {
     let model_path = PathBuf::from(
-        //r"C:\Users\11048\Documents\cpp\chatglm.cpp\CLIP-ViT-B-32-laion2B-s34B-b79K\ggml-model-f16.bin"
-        r"C:\Users\11048\Documents\cpp\chatglm.cpp\chinese-clip-vit-base-patch16\ggml-model-f16.bin",
+        r"C:\Users\11048\Documents\cpp\chatglm.cpp\CLIP-ViT-B-32-laion2B-s34B-b79K\ggml-model-f16.bin", 
+        //r"C:\Users\11048\Documents\cpp\chatglm.cpp\clip-vit-base-patch32\ggml-model-f16.bin",
+        //r"C:\Users\11048\Documents\cpp\chatglm.cpp\chinese-clip-vit-large-patch14/ggml-model-f16.bin",
+        //r"C:\Users\11048\Documents\cpp\chatglm.cpp\QA-CLIP-ViT-B-16\ggml-model-f16.bin",
+        //r"C:\Users\11048\Documents\cpp\chatglm.cpp\chinese-clip-vit-base-patch16\ggml-model-f16.bin",
     );
     //let img_path = r"C:\Users\11048\Pictures\images\pixabay.com\set1\white-flower-7990645_1280.jpg";
     let img_path_vec = vec![
         //bin/image-search-build -m /home/skiro/code/ai/models/laion_clip-vit-b-32-laion2b-s34b-b79k.ggmlv0.q4_1.bin /home/skiro/code/ai/images
+        r"C:\Users\11048\Pictures\images\pixabay.com\set1\white-flower-7990645_1280.jpg",
+        r"C:\Users\11048\Pictures\images\pixabay.com\set1\sun-8066051_1280.jpg",
+        r"C:\Users\11048\Pictures\images\pixabay.com\set1\sun-8066051_1280.jpg",
         //r"C:\Users\11048\Pictures\images\pixabay.com\set1\white-flower-7990645_1280.jpg",
-        //r"C:\Users\11048\Pictures\images\pixabay.com\set1\sun-8066051_1280.jpg",
-        //r"C:\Users\11048\Pictures\images\pixabay.com\set1\sun-8066051_1280.jpg",
-        //r"C:\Users\11048\Pictures\images\pixabay.com\set1\white-flower-7990645_1280.jpg",
-        r"C:\Users\11048\Pictures\00148-459525319.png",
-        //r"C:\Users\11048\Pictures\images\pixabay.com\set1\white-flower-7990645_1280.jpg",
-        r"C:\Users\11048\Pictures\00148-459525319.png",
+        //r"C:\Users\11048\Pictures\00148-459525319.png",
+        r"C:\Users\11048\Pictures\images\pixabay.com\set1\white-flower-7990645_1280.jpg",
+        //r"C:\Users\11048\Pictures\00148-459525319.png",
         //r"C:\Users\11048\Pictures\images\pixabay.com\set1\white-flower-7990645_1280.jpg",
     ];
     //let text = "a";
@@ -52,25 +55,39 @@ fn main() {
     let inference_parameters = llm::InferenceParameters::default();
 
     // Generate embeddings for query and comparands
-    let vision_embeddings =
-        get_image_embeddings(vision_model.as_ref(), &inference_parameters, &img_path_vec);
+    let vision_embeddings = get_image_embeddings(vision_model.as_ref(), &inference_parameters, &img_path_vec);
+    //assert_eq!(vision_embeddings.len(), img_path_vec.len() * 512);
+    let batch_vision_embeddings: Vec<Vec<f32>> = vision_embeddings
+        .chunks(512)
+        //.chunks(768)
+        .map(|chunk| chunk.to_vec())
+        .collect();
     //let text_embeddings = get_embeddings(text_model.as_ref(), &inference_parameters, text);
-    save_vec(&vision_embeddings);
+    //save_vec(&vision_embeddings);
 
     // Print embeddings
     fn print_embeddings(text: &str, embeddings: &[f32]) {
         println!("{text}");
         println!("  Embeddings length: {}", embeddings.len());
         println!("  Embeddings first 10: {:.06?}", embeddings.get(0..10));
-        if embeddings.len() > 512 {
-            println!("  Embeddings first 512-522: {:.06?}", embeddings.get(512..522));
+        /*if embeddings.len() > 512 {
+            println!(
+                "  Embeddings first 512-522: {:.06?}",
+                embeddings.get(512..522)
+            );
         }
         if embeddings.len() > 1024 {
-            println!("  Embeddings first 1024-1044: {:.06?}", embeddings.get(1024..1034));
-        }
+            println!(
+                "  Embeddings first 1024-1044: {:.06?}",
+                embeddings.get(1024..1034)
+            );
+        }*/
     }
 
-    print_embeddings(img_path_vec[0], &vision_embeddings);
+    //batch_vision_embeddings.iter().map(|vision_embeddings| {})
+    for (filepath, vision_embedding) in std::iter::zip(img_path_vec, batch_vision_embeddings) {
+        print_embeddings(filepath, &vision_embedding);
+    }
     //print_embeddings(text, &text_embeddings);
     //save_vec(&text_embeddings).unwrap();
 

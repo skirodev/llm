@@ -473,8 +473,8 @@ impl KnownModel for ClipVision {
                 embeddings = ctx0.op_norm(&embeddings);
 
                 embeddings = ctx0.op_add(
-                    &ctx0.op_mul(&ctx0.op_repeat(&self.pre_ln_w, &embeddings), &embeddings),
-                    &ctx0.op_repeat(&self.pre_ln_b, &embeddings),
+                    &ctx0.op_mul(&embeddings, &self.pre_ln_w),
+                    &self.pre_ln_b,
                 );
             }
 
@@ -492,19 +492,18 @@ impl KnownModel for ClipVision {
 
                     current = ctx0.op_add(
                         &ctx0.op_mul(
-                            //&ctx0.op_repeat(&self.layers[il].ln_1_w, &current), 
                             &current,
                             &self.layers[il].ln_1_w
                         ),
-                        &ctx0.op_repeat(&self.layers[il].ln_1_b, &current),
+                        &self.layers[il].ln_1_b,
                     );
                 }
 
                 // self-attention
                 {
                     let mut Q = ctx0.op_add(
-                        &ctx0.op_repeat(&self.layers[il].q_b, &current),
                         &ctx0.op_mul_mat(&self.layers[il].q_w, &current),
+                        &self.layers[il].q_b
                     );
 
                     Q = ctx0
@@ -516,8 +515,8 @@ impl KnownModel for ClipVision {
                     //std::process::exit(0);
 
                     let mut K = ctx0.op_add(
-                        &ctx0.op_repeat(&self.layers[il].k_b, &current),
                         &ctx0.op_mul_mat(&self.layers[il].k_w, &current),
+                        &self.layers[il].k_b
                     );
 
                     K = ctx0.op_reshape_4d(&K, v_head_dim, v_n_head, num_positions, batch_size);
@@ -525,8 +524,8 @@ impl KnownModel for ClipVision {
                     K = ctx0.op_reshape_3d(&K, v_head_dim, num_positions, v_n_head * batch_size);
 
                     let mut V = ctx0.op_add(
-                        &ctx0.op_repeat(&self.layers[il].v_b, &current),
                         &ctx0.op_mul_mat(&self.layers[il].v_w, &current),
+                        &self.layers[il].v_b
                     );
 
                     V = ctx0.op_reshape_4d(&V, v_head_dim, v_n_head, num_positions, batch_size);
@@ -547,8 +546,8 @@ impl KnownModel for ClipVision {
 
                 // attention output
                 current = ctx0.op_add(
-                    &ctx0.op_repeat(&self.layers[il].o_b, &current),
                     &ctx0.op_mul_mat(&self.layers[il].o_w, &current),
+                    &self.layers[il].o_b
                 );
 
                 // re-add the layer input, e.g., residual
@@ -561,13 +560,13 @@ impl KnownModel for ClipVision {
                     current = ctx0.op_norm(&current);
 
                     current = ctx0.op_add(
-                        &ctx0.op_mul(&ctx0.op_repeat(&self.layers[il].ln_2_w, &current), &current),
-                        &ctx0.op_repeat(&self.layers[il].ln_2_b, &current),
+                        &ctx0.op_mul(&current, &self.layers[il].ln_2_w),
+                        &self.layers[il].ln_2_b,
                     );
                 }
 
                 current = ctx0.op_mul_mat(&self.layers[il].ff_i_w, &current);
-                current = ctx0.op_add(&ctx0.op_repeat(&self.layers[il].ff_i_b, &current), &current);
+                current = ctx0.op_add(&current, &self.layers[il].ff_i_b);
 
                 //assert_eq!(use_gelu, false);
                 if use_gelu {
@@ -579,7 +578,7 @@ impl KnownModel for ClipVision {
                 }
 
                 current = ctx0.op_mul_mat(&self.layers[il].ff_o_w, &current);
-                current = ctx0.op_add(&ctx0.op_repeat(&self.layers[il].ff_o_b, &current), &current);
+                current = ctx0.op_add(&current, &self.layers[il].ff_o_b);
 
                 // residual 2
                 current = ctx0.op_add(&embeddings, &current);
@@ -614,8 +613,8 @@ impl KnownModel for ClipVision {
                 embeddings = ctx0.op_norm(&embeddings);
 
                 embeddings = ctx0.op_add(
-                    &ctx0.op_mul(&ctx0.op_repeat(&self.post_ln_w, &embeddings), &embeddings),
-                    &ctx0.op_repeat(&self.post_ln_b, &embeddings),
+                    &ctx0.op_mul(&embeddings, &self.post_ln_w),
+                    &self.post_ln_b,
                 );
             }
 
@@ -923,30 +922,3 @@ struct Layer {
     ln_2_w: Tensor,
     ln_2_b: Tensor,
 }
-
-/*fn feed_forward_network(context: &ggml::Context, layer: &Layer, input: &Tensor) -> Tensor {
-    let mut current = context.op_norm(input);
-
-    //gain and bias
-    current = context.op_add(
-        &context.op_mul(&context.op_repeat(&layer.ln_2_g, &current), &current),
-        &context.op_repeat(&layer.ln_2_b, &current),
-    );
-
-    // apply weights
-    current = context.op_mul_mat(&layer.c_mlp_fc_w, &current);
-
-    // apply bias
-    current = context.op_add(&context.op_repeat(&layer.c_mlp_fc_b, &current), &current);
-
-    // GELU activation
-    current = context.op_gelu(&current);
-
-    // projection
-    // cur = proj_w*cur + proj_b
-    current = context.op_mul_mat(&layer.c_mlp_proj_w, &current);
-
-    current = context.op_add(&context.op_repeat(&layer.c_mlp_proj_b, &current), &current);
-
-    current
-}*/

@@ -14,10 +14,10 @@ fn main() {
         //bin/image-search-build -m /home/skiro/code/ai/models/laion_clip-vit-b-32-laion2b-s34b-b79k.ggmlv0.q4_1.bin /home/skiro/code/ai/images
         r"C:\Users\11048\Pictures\images\pixabay.com\set1\white-flower-7990645_1280.jpg",
         r"C:\Users\11048\Pictures\images\pixabay.com\set1\sun-8066051_1280.jpg",
-        r"C:\Users\11048\Pictures\images\pixabay.com\set1\sun-8066051_1280.jpg",
+        //r"C:\Users\11048\Pictures\images\pixabay.com\set1\sun-8066051_1280.jpg",
         //r"C:\Users\11048\Pictures\images\pixabay.com\set1\white-flower-7990645_1280.jpg",
         //r"C:\Users\11048\Pictures\00148-459525319.png",
-        r"C:\Users\11048\Pictures\images\pixabay.com\set1\white-flower-7990645_1280.jpg",
+        //r"C:\Users\11048\Pictures\images\pixabay.com\set1\white-flower-7990645_1280.jpg",
         //r"C:\Users\11048\Pictures\00148-459525319.png",
         //r"C:\Users\11048\Pictures\images\pixabay.com\set1\white-flower-7990645_1280.jpg",
     ];

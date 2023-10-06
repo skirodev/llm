@@ -10,7 +10,7 @@ fn main() {
         //r"C:\Users\11048\Documents\cpp\chatglm.cpp\chinese-clip-vit-base-patch16\ggml-model-f16.bin",
     );
     //let img_path = r"C:\Users\11048\Pictures\images\pixabay.com\set1\white-flower-7990645_1280.jpg";
-    let img_path_vec = vec![
+    let image_paths = vec![
         //bin/image-search-build -m /home/skiro/code/ai/models/laion_clip-vit-b-32-laion2b-s34b-b79k.ggmlv0.q4_1.bin /home/skiro/code/ai/images
         r"C:\Users\11048\Pictures\images\pixabay.com\set1\white-flower-7990645_1280.jpg",
         r"C:\Users\11048\Pictures\images\pixabay.com\set1\sun-8066051_1280.jpg",
@@ -55,13 +55,13 @@ fn main() {
     let inference_parameters = llm::InferenceParameters::default();
 
     // Generate embeddings for query and comparands
-    let vision_embeddings = get_image_embeddings(vision_model.as_ref(), &inference_parameters, &img_path_vec);
+    let vision_embeddings = get_image_embeddings(vision_model.as_ref(), &inference_parameters, &image_paths);
     //assert_eq!(vision_embeddings.len(), img_path_vec.len() * 512);
-    let batch_vision_embeddings: Vec<Vec<f32>> = vision_embeddings
-        .chunks(512)
+    let batch_vision_embeddings: Vec<Vec<f32>> = vision_embeddings;
+        /*.chunks(512)
         //.chunks(768)
         .map(|chunk| chunk.to_vec())
-        .collect();
+        .collect();*/
     //let text_embeddings = get_embeddings(text_model.as_ref(), &inference_parameters, text);
     //save_vec(&vision_embeddings);
 
@@ -85,7 +85,7 @@ fn main() {
     }
 
     //batch_vision_embeddings.iter().map(|vision_embeddings| {})
-    for (filepath, vision_embedding) in std::iter::zip(img_path_vec, batch_vision_embeddings) {
+    for (filepath, vision_embedding) in std::iter::zip(image_paths, batch_vision_embeddings) {
         print_embeddings(filepath, &vision_embedding);
     }
     //print_embeddings(text, &text_embeddings);
@@ -115,7 +115,7 @@ where
     Ok(())
 }
 
-fn get_embeddings(
+/*fn get_embeddings(
     model: &dyn llm::Model,
     inference_parameters: &llm::InferenceParameters,
     query: &str,
@@ -123,7 +123,7 @@ fn get_embeddings(
     let mut session = model.start_session(Default::default());
     let mut output_request = llm::OutputRequest {
         all_logits: None,
-        embeddings: Some(Vec::new()),
+        embeddings: Vec::new(),
     };
     /*let vocab = model.tokenizer();
     let beginning_of_sentence = true;
@@ -136,14 +136,14 @@ fn get_embeddings(
     let query_token_ids = clip_tokenize(model, query);
     model.evaluate(&mut session, &query_token_ids, &mut output_request);
     output_request.embeddings.unwrap()
-}
+}*/
 
 fn get_image_embeddings(
     model: &dyn llm::Model,
     _inference_parameters: &llm::InferenceParameters,
     //image_path: &str,
-    image_path_vec: &[&str],
-) -> Vec<f32> {
+    image_paths: &[&str],
+) -> Vec<Vec<f32>> {
     let mut session = model.start_session(llm::InferenceSessionConfig {
         memory_k_type: llm::ModelKVMemoryType::Float16,
         memory_v_type: llm::ModelKVMemoryType::Float16,
@@ -152,7 +152,7 @@ fn get_image_embeddings(
     });
     let mut output_request = llm::OutputRequest {
         all_logits: None,
-        embeddings: Some(Vec::new()),
+        embeddings: Some(Vec::new())
     };
     //single
     /*let image = image::open(&image_path).unwrap().to_rgb8();
@@ -162,7 +162,7 @@ fn get_image_embeddings(
     //println!("{:#?}", resized.dimensions());
     let img_vec_resized: Vec<u32> = resized.to_vec().iter().map(|&i| i as u32).collect();*/
     // batch
-    let imgs: Vec<Vec<u32>> = image_path_vec
+    let images: Vec<Vec<u32>> = image_paths
         .iter()
         .map(|image_path| {
             let image = image::open(&image_path).unwrap().to_rgb8();
@@ -175,10 +175,9 @@ fn get_image_embeddings(
             img_vec_resized
         })
         .collect();
-    let flattened_imgs = imgs.concat();
-    //let query_token_ids = vec![8];
-    model.evaluate(&mut session, &flattened_imgs, &mut output_request);
-    output_request.embeddings.unwrap()
+    let images: Vec<_> = images.iter().map(AsRef::as_ref).collect();
+    //let flattened_imgs = imgs.concat();
+    model.batch_evaluate(&mut session, &images, &mut output_request).unwrap()
 }
 
 // chinese clip

@@ -66,6 +66,16 @@ pub trait KnownModel: Send + Sync {
         output_request: &mut OutputRequest,
     );
 
+    ///
+    fn batch_evaluate(
+        &self,
+        _session: &mut InferenceSession,
+        _input_batch_tokens: &[&[TokenId]],
+        _output_request: &mut OutputRequest,
+    ) -> Result<Vec<Vec<f32>>, String> {
+        Err("This model does not support batch encoding.".to_string())
+    }
+
     /// Get the hyperparameters for this model.
     fn hyperparameters(&self) -> &Self::Hyperparameters;
 
@@ -112,6 +122,14 @@ pub trait Model: Send + Sync {
         output_request: &mut OutputRequest,
     );
 
+    ///
+    fn batch_evaluate(
+        &self,
+        session: &mut InferenceSession,
+        input_batch_tokens: &[&[TokenId]],
+        output_request: &mut OutputRequest,
+    ) -> Result<Vec<Vec<f32>>, String>;
+
     /// Get the tokenizer for this model.
     fn tokenizer(&self) -> &Tokenizer;
 
@@ -140,6 +158,15 @@ impl<H: Hyperparameters, M: KnownModel<Hyperparameters = H>> Model for M {
         output_request: &mut OutputRequest,
     ) {
         KnownModel::evaluate(self, session, input_tokens, output_request)
+    }
+
+    fn batch_evaluate(
+        &self,
+        session: &mut InferenceSession,
+        input_batch_tokens: &[&[TokenId]],
+        output_request: &mut OutputRequest,
+    ) -> Result<Vec<Vec<f32>>, String> {
+        KnownModel::batch_evaluate(self, session, input_batch_tokens, output_request)
     }
 
     fn tokenizer(&self) -> &Tokenizer {

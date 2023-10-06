@@ -735,6 +735,24 @@ impl KnownModel for ClipVision {
         }
     }
 
+    #[allow(non_snake_case)]
+    fn batch_evaluate(
+        &self,
+        session: &mut InferenceSession,
+        input_batch_tokens: &[&[u32]],
+        output_request: &mut OutputRequest,
+    ) -> Result<Vec<Vec<f32>>, String> {
+        let input_tokens = input_batch_tokens.concat();
+        self.evaluate(session, &input_tokens, output_request);
+        let hyperparameters = self.hyperparameters();
+        let embedding_dim = hyperparameters.v_projection_dim;
+        let batch_embeddings = output_request.embeddings.as_ref().unwrap()
+            .chunks(embedding_dim)
+            .map(|chunk| chunk.to_vec())
+            .collect();
+        Ok(batch_embeddings)
+    }
+
     fn hyperparameters(&self) -> &Self::Hyperparameters {
         &self.hyperparameters
     }

@@ -59,62 +59,64 @@ impl KnownModel for ClipVision {
         Self: Sized,
     {
         let mut tl = tensor_loader;
+        let backend = params.backend(0);
 
         // model-global weights
         let vision_class_embedding = tl.load("vision_model.embeddings.class_embedding")?;
         let vision_patch_embeddings = tl.load("vision_model.embeddings.patch_embedding.weight")?;
-        let vision_position_embeddings =
-            tl.load("vision_model.embeddings.position_embedding.weight")?;
+        let vision_position_embeddings = tl.load("vision_model.embeddings.position_embedding.weight")?;
         let pre_ln_w = tl.load("vision_model.pre_layrnorm.weight")?;
         let pre_ln_b = tl.load("vision_model.pre_layrnorm.bias")?;
 
-        let post_ln_w = tl.load("vision_model.post_layernorm.weight")?;
-        let post_ln_b = tl.load("vision_model.post_layernorm.bias")?;
-        let projection = tl.load("visual_projection.weight")?;
+        let post_ln_w = tl.load("vision_model.post_layernorm.weight")?.transfer_to(backend);
+        let post_ln_b = tl.load("vision_model.post_layernorm.bias")?.transfer_to(backend);
+        let projection = tl.load("visual_projection.weight")?.transfer_to(backend);
 
         let mut layers = Vec::new();
         for i in 0..hyperparameters.v_n_layer {
+            let backend = params.backend(i);
+
             let layer = Layer {
                 // vision
                 q_w: tl.load(&format!(
                     "vision_model.encoder.layers.{i}.self_attn.q_proj.weight"
-                ))?,
+                ))?.transfer_to(backend),
                 q_b: tl.load(&format!(
                     "vision_model.encoder.layers.{i}.self_attn.q_proj.bias"
-                ))?,
+                ))?.transfer_to(backend),
                 k_w: tl.load(&format!(
                     "vision_model.encoder.layers.{i}.self_attn.k_proj.weight"
-                ))?,
+                ))?.transfer_to(backend),
                 k_b: tl.load(&format!(
                     "vision_model.encoder.layers.{i}.self_attn.k_proj.bias"
-                ))?,
+                ))?.transfer_to(backend),
                 v_w: tl.load(&format!(
                     "vision_model.encoder.layers.{i}.self_attn.v_proj.weight"
-                ))?,
+                ))?.transfer_to(backend),
                 v_b: tl.load(&format!(
                     "vision_model.encoder.layers.{i}.self_attn.v_proj.bias"
-                ))?,
+                ))?.transfer_to(backend),
                 o_w: tl.load(&format!(
                     "vision_model.encoder.layers.{i}.self_attn.out_proj.weight"
-                ))?,
+                ))?.transfer_to(backend),
                 o_b: tl.load(&format!(
                     "vision_model.encoder.layers.{i}.self_attn.out_proj.bias"
-                ))?,
+                ))?.transfer_to(backend),
 
                 ln_1_w: tl.load(&format!(
                     "vision_model.encoder.layers.{i}.layer_norm1.weight"
-                ))?,
-                ln_1_b: tl.load(&format!("vision_model.encoder.layers.{i}.layer_norm1.bias"))?,
+                ))?.transfer_to(backend),
+                ln_1_b: tl.load(&format!("vision_model.encoder.layers.{i}.layer_norm1.bias"))?.transfer_to(backend),
 
-                ff_i_w: tl.load(&format!("vision_model.encoder.layers.{i}.mlp.fc1.weight"))?,
-                ff_i_b: tl.load(&format!("vision_model.encoder.layers.{i}.mlp.fc1.bias"))?,
-                ff_o_w: tl.load(&format!("vision_model.encoder.layers.{i}.mlp.fc2.weight"))?,
-                ff_o_b: tl.load(&format!("vision_model.encoder.layers.{i}.mlp.fc2.bias"))?,
+                ff_i_w: tl.load(&format!("vision_model.encoder.layers.{i}.mlp.fc1.weight"))?.transfer_to(backend),
+                ff_i_b: tl.load(&format!("vision_model.encoder.layers.{i}.mlp.fc1.bias"))?.transfer_to(backend),
+                ff_o_w: tl.load(&format!("vision_model.encoder.layers.{i}.mlp.fc2.weight"))?.transfer_to(backend),
+                ff_o_b: tl.load(&format!("vision_model.encoder.layers.{i}.mlp.fc2.bias"))?.transfer_to(backend),
 
                 ln_2_w: tl.load(&format!(
                     "vision_model.encoder.layers.{i}.layer_norm2.weight"
-                ))?,
-                ln_2_b: tl.load(&format!("vision_model.encoder.layers.{i}.layer_norm2.bias"))?,
+                ))?.transfer_to(backend),
+                ln_2_b: tl.load(&format!("vision_model.encoder.layers.{i}.layer_norm2.bias"))?.transfer_to(backend),
             };
 
             layers.push(layer);
@@ -150,19 +152,18 @@ impl KnownModel for ClipVision {
     }
 
     // allow snake case here as its a one-to-one mapping of the original names
+    #[tracing::instrument(level = "trace", skip_all)]
     #[allow(non_snake_case)]
     fn evaluate(
         &self,
         session: &mut InferenceSession,
         //input_tokens: &[TokenId],
-        //image_path: &std::path::Path,
-        //img_vec_resized: &[u32],
-        flattened_imgs: &[u32],
+        input_tokens: &[u32],
         output_request: &mut OutputRequest,
     ) {
-        let IMAGE_BATCH_SIZE: usize = flattened_imgs.clone().len() / (1 * 3 * 224 * 224);
-        assert_eq!(flattened_imgs.len() % (1 * 3 * 224 * 224), 0);
-        println!("Get Images: {:?}", flattened_imgs.len() / (1 * 3 * 224 * 224));
+        let IMAGE_BATCH_SIZE: usize = input_tokens.clone().len() / (1 * 3 * 224 * 224);
+        assert_eq!(input_tokens.len() % (1 * 3 * 224 * 224), 0);
+        println!("Get Images: {:?}", input_tokens.len() / (1 * 3 * 224 * 224));
         //let flattened_imgs = imgs.concat().as_slice();
         /*let imgs: Vec<Vec<u32>> = flattened_imgs.chunks(3)
         .map(|chunk| chunk.to_vec())
@@ -193,12 +194,14 @@ impl KnownModel for ClipVision {
             ..
         } = self.hyperparameters;
 
-        let outputs = session.compute(self.context.clone(), flattened_imgs, |builder| {
-            let mut imgs: Vec<Vec<u32>> = flattened_imgs.chunks(1 * 3 * 224 * 224)
+        let outputs = session.compute(self.context.clone(), input_tokens, |builder| {
+            let mut imgs: Vec<Vec<u32>> = input_tokens.chunks(1 * 3 * 224 * 224)
                 .map(|chunk| chunk.to_vec())
                 .collect();
             assert_eq!(imgs.len(), IMAGE_BATCH_SIZE);
-            let ctx0 = builder.ctx0.borrow();
+
+            let mut ctx0 = builder.ctx0.borrow_mut();
+            // Do not use embd
             //let embd = builder.embd;
             //let mut input_layer = ctx0.op_get_rows(&self.wte, embd);
             let mut input_layer: Tensor;
@@ -427,8 +430,7 @@ impl KnownModel for ClipVision {
             //println!("Debug 2 inp: {:?}", get_f32_data_from_tensor(&inp).get(0..20));
 
             // concat class_embeddings and patch_embeddings
-            let mut embeddings =
-                ctx0.new_tensor_3d(ggml::Type::F32, v_n_embd, num_positions, batch_size);
+            let mut embeddings = ctx0.new_tensor_3d(ggml::Type::F32, v_n_embd, num_positions, batch_size);
 
             embeddings.zero_data();
             let temp = ctx0.new_tensor_3d(ggml::Type::F32, v_n_embd, 1, batch_size);
@@ -481,6 +483,8 @@ impl KnownModel for ClipVision {
             //std::process::exit(0);
             //let mut current: Tensor;
             for il in 0..v_n_layer {
+                ctx0.set_offloading(self.params.should_offload(il));
+
                 let mut current = embeddings.share();
                 //let nb_q_w = self.layers[il].q_w.get_nb()[0];
                 // attention uses first scratch buffer
@@ -550,6 +554,9 @@ impl KnownModel for ClipVision {
                     &self.layers[il].o_b
                 );
 
+                // use the second scratch for the feed forward
+                ctx0.use_scratch(builder.get_scratch(1));
+
                 // re-add the layer input, e.g., residual
                 current = ctx0.op_add(&current, &embeddings);
 
@@ -608,6 +615,9 @@ impl KnownModel for ClipVision {
                 &cls,
             );
 
+            // use the first scratch for the norm
+            ctx0.use_scratch(builder.get_scratch(0));
+
             // post-layernorm
             {
                 embeddings = ctx0.op_norm(&embeddings);
@@ -617,6 +627,8 @@ impl KnownModel for ClipVision {
                     &self.post_ln_b,
                 );
             }
+            
+            ctx0.set_offloading(false);
 
             //ctx0.use_scratch(builder.get_scratch(0));
             ctx0.use_scratch(None);
@@ -628,12 +640,11 @@ impl KnownModel for ClipVision {
 
             // normalize output embeddings
             let mut output = ctx0.new_tensor_2d(ggml::Type::F32, v_projection_dim, batch_size);
-
+            
             for b in 0..batch_size {
                 let mut embedding = ctx0.op_get_rows(&embeddings, &ctx0.new_i32(b as i32));
                 let length = ctx0.op_sqrt(&ctx0.op_sum(&ctx0.op_sqr(&embedding)));
-                embedding =
-                    ctx0.op_scale_inplace(&embedding, &ctx0.op_div(&ctx0.new_f32(1.0f32), &length));
+                embedding = ctx0.op_scale_inplace(&embedding, &ctx0.op_div(&ctx0.new_f32(1.0f32), &length));
                 output = ctx0.op_acc(
                     &output,
                     &embedding,
@@ -649,7 +660,7 @@ impl KnownModel for ClipVision {
             //ggml_set_name(output, "check");
             assert_eq!(output.get_ne()[0] as usize, v_projection_dim);
             assert_eq!(output.get_ne()[1] as usize, IMAGE_BATCH_SIZE);
-
+            //xxctx0.set_offloading(false);
             //assert_eq!(output.nbytes(), 2048 * IMAGE_BATCH_SIZE);
             //assert_eq!(output.nelements(), 512 * IMAGE_BATCH_SIZE);
             // read output
@@ -735,7 +746,7 @@ impl KnownModel for ClipVision {
         }
     }
 
-    #[allow(non_snake_case)]
+    #[tracing::instrument(level = "trace", skip_all)]
     fn batch_evaluate(
         &self,
         session: &mut InferenceSession,

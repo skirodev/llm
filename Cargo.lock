@@ -1454,6 +1454,7 @@ dependencies = [
  "image",
  "llm-base",
  "ndarray",
+ "tracing",
 ]
 
 [[package]]

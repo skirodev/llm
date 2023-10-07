@@ -13,7 +13,7 @@ fn main() {
     let image_paths = vec![
         //bin/image-search-build -m /home/skiro/code/ai/models/laion_clip-vit-b-32-laion2b-s34b-b79k.ggmlv0.q4_1.bin /home/skiro/code/ai/images
         r"C:\Users\11048\Pictures\images\pixabay.com\set1\white-flower-7990645_1280.jpg",
-        r"C:\Users\11048\Pictures\images\pixabay.com\set1\sun-8066051_1280.jpg",
+        //r"C:\Users\11048\Pictures\images\pixabay.com\set1\sun-8066051_1280.jpg",
         //r"C:\Users\11048\Pictures\images\pixabay.com\set1\sun-8066051_1280.jpg",
         //r"C:\Users\11048\Pictures\images\pixabay.com\set1\white-flower-7990645_1280.jpg",
         //r"C:\Users\11048\Pictures\00148-459525319.png",
@@ -26,7 +26,13 @@ fn main() {
     let text = "girl";
 
     // Load model
-    let model_params = llm::ModelParameters::default();
+    let model_params = llm::ModelParameters {
+        prefer_mmap: true,
+        //context_size: 2048,
+        use_gpu: false,
+        //gpu_layers: 10,
+        ..Default::default()
+    };
     let model_architecture = llm::ModelArchitecture::ClipVision;
     let vision_model = llm::load_dynamic(
         Some(model_architecture),

@@ -1,7 +1,10 @@
 #![allow(unused_variables, dead_code, unused_imports)]
 use std::path::PathBuf;
+use std::sync::Arc;
+use llm::*;
 
-fn main() {
+#[tokio::main]
+async fn main() {
     let model_path = PathBuf::from(
         r"C:\Users\11048\Documents\cpp\chatglm.cpp\CLIP-ViT-B-32-laion2B-s34B-b79K\ggml-model-f16.bin",
         //r"C:\Users\11048\Documents\cpp\chatglm.cpp\clip-vit-base-patch32\ggml-model-f16.bin",
@@ -25,46 +28,8 @@ fn main() {
     //let text = "a sitting man";
     let text = "girl";
 
-    // Load model
-    let model_params = llm::ModelParameters {
-        prefer_mmap: true,
-        //context_size: 2048,
-        use_gpu: false,
-        //gpu_layers: 10,
-        ..Default::default()
-    };
-    let model_architecture = llm::ModelArchitecture::ClipVision;
-    let vision_model = llm::load_dynamic(
-        Some(model_architecture),
-        &model_path,
-        //tokenizer_source.clone(),
-        llm::TokenizerSource::Embedded,
-        model_params.clone(),
-        llm::load_progress_callback_stdout,
-    )
-    .unwrap_or_else(|err| {
-        panic!("Failed to load {model_architecture} model from {model_path:?}: {err}")
-    });
-    // text
-    /*let model_architecture = llm::ModelArchitecture::ClipBert;
-    let text_model = llm::load_dynamic(
-        Some(model_architecture),
-        &model_path,
-        //tokenizer_source.clone(),
-        llm::TokenizerSource::Embedded,
-        model_params.clone(),
-        llm::load_progress_callback_stdout,
-    )
-    .unwrap_or_else(|err| {
-        panic!("Failed to load {model_architecture} model from {model_path:?}: {err}")
-    });*/
-    let inference_parameters = llm::InferenceParameters::default();
-
-    // Generate embeddings for query and comparands
-    let vision_embeddings =
-        get_image_embeddings(vision_model.as_ref(), &inference_parameters, &image_paths);
-    //assert_eq!(vision_embeddings.len(), img_path_vec.len() * 512);
-    let batch_vision_embeddings: Vec<Vec<f32>> = vision_embeddings;
+    let embeder = Arc::new(LocalEmbedder::new(&model_path).unwrap());
+    let batch_vision_embeddings: Vec<Vec<f32>> = embeder.batch_embed(image_paths.clone()).await.unwrap();
     /*.chunks(512)
     //.chunks(768)
     .map(|chunk| chunk.to_vec())
@@ -96,30 +61,9 @@ fn main() {
         print_embeddings(filepath, &vision_embedding);
     }
     //print_embeddings(text, &text_embeddings);
-    //save_vec(&text_embeddings).unwrap();
 
     //let similarity = cosine_similarity(&vision_embeddings, &text_embeddings);
     //println!("Similarity: {:?}", similarity);
-}
-
-fn save_vec<T>(vec: &[T]) -> std::io::Result<()>
-where
-    T: std::fmt::Display,
-{
-    use std::io::Write;
-    //let float_vec: Vec<f64> = vec![0.1091, -0.0323, 0.0118, 0.0033, -0.0036, 0.0243, 0.0443, -0.0534, 0.0089, 0.0180];
-    let file_path = "text_embeddings.txt";
-
-    let mut file = std::fs::File::create(file_path)?;
-
-    for value in vec {
-        file.write_all(value.to_string().as_bytes())?;
-        file.write_all(b"\n")?; // 换行
-    }
-
-    println!("数据已写入文件：{}", file_path);
-
-    Ok(())
 }
 
 /*fn get_embeddings(

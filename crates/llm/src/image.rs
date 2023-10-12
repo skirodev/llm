@@ -2,10 +2,7 @@
 use anyhow::Result;
 //use crypto::digest::Digest;
 //use md5::{Context};
-use sha2::{
-    Sha256,
-    Digest
-};
+use sha2::{Digest, Sha256};
 use std::io::Read;
 
 fn main() {
@@ -45,18 +42,16 @@ pub struct Image {
 /// Get local available images.
 pub fn get_available_images() -> Result<Vec<Image>, std::io::Error> {
     let dir = r"C:\Users\11048\Pictures\images\pixabay.com\set1";
-    let allowed_extensions = vec![
-        ".png", 
-        "jpg", 
-        ".jpeg", 
-        ".bmp"
-    ];
+    let allowed_extensions = vec![".png", "jpg", ".jpeg", ".bmp"];
 
     let mut images = std::fs::read_dir(dir)?
         .filter_map(|file| {
             if let Ok(file) = file {
                 if let Some(filename) = file.file_name().to_str() {
-                    if allowed_extensions.iter().any(|&ext| filename.ends_with(ext)) {
+                    if allowed_extensions
+                        .iter()
+                        .any(|&ext| filename.ends_with(ext))
+                    {
                         let filepath = format!("{dir}/{filename}");
                         return Some(Image {
                             filename: filename.to_string(),
@@ -70,7 +65,7 @@ pub fn get_available_images() -> Result<Vec<Image>, std::io::Error> {
             None
         })
         .collect::<Vec<_>>();
-    
+
     Ok(images)
 }
 
@@ -103,5 +98,5 @@ fn calculate_sha256(file_path: &std::path::Path) -> String {
         sha256.update(&buffer[..bytes_read]);
     }
 
-	format!("{:x}", sha256.finalize())
+    format!("{:x}", sha256.finalize())
 }

@@ -66,9 +66,13 @@
 //! }
 //! ```
 #![deny(missing_docs)]
+#![feature(async_fn_in_trait)]
 
 mod image;
 pub use image::get_available_images;
+mod cpu;
+pub use cpu::*;
+
 use std::{
     error::Error,
     fmt::{Debug, Display},
@@ -181,7 +185,13 @@ define_models!(
     (llama, "llama", Llama, llm_llama, "LLaMA"),
     (mpt, "mpt", Mpt, llm_mpt, "MPT"),
     (falcon, "falcon", Falcon, llm_falcon, "Falcon"),
-    (clipvision, "clipvision", ClipVision, llm_clipvision, "ClipVision")
+    (
+        clipvision,
+        "clipvision",
+        ClipVision,
+        llm_clipvision,
+        "ClipVision"
+    )
 );
 
 /// Used to dispatch some code based on the model architecture.

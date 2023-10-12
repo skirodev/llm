@@ -538,6 +538,8 @@ impl KnownModel for ClipVision {
 
                     let mut KQ = ctx0.op_mul_mat(&K, &Q);
                     KQ = ctx0.op_soft_max_inplace(&KQ);
+                    println!("V shape: {:?}", V.get_ne());
+                    println!("KQ shape: {:?}", KQ.get_ne());
                     let mut KQV = ctx0.op_mul_mat(&V, &KQ);
                     KQV = ctx0.op_reshape_4d(&KQV, v_head_dim, num_positions, v_n_head, batch_size);
                     KQV = ctx0.op_cont(&ctx0.op_permute(&KQV, (0, 2, 1, 3)));

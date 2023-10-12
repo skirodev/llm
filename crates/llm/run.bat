@@ -17,5 +17,5 @@
 ::cargo run --release --example token
 ::set OPENCL_PATH=C:\Users\11048\Documents\vcpkg\packages\opencl_x64-windows\bin
 ::set CLBLAST_PATH=C:\Users\11048\Documents\vcpkg\packages\clblast_x64-windows\bin
-cargo run --release --example clip-vision-batch
+cargo run --release --example clip-vision-batch-async-336
 ::cargo run --release --example vectorite

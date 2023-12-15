@@ -54,7 +54,7 @@ pub struct InferenceSession {
 
     /// How many tokens have been fed into the model's working memory so far.
     #[doc(hidden)]
-    n_past: usize,
+    pub n_past: usize,
 
     /// How much memory is required per token for the temporary context used
     /// during inference.

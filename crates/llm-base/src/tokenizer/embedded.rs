@@ -134,8 +134,30 @@ impl EmbeddedTokenizer {
     }
 
     /// Converts a token index to the token it represents in this tokenizer.
-    pub(crate) fn token(&self, idx: usize) -> Token {
-        self.id_to_token[idx].text.clone()
+    pub(crate) fn token(&self, token_id: usize) -> Token {
+        let mut ret = Vec::new();
+        let token_id = token_id as TokenId;
+        let token = &self.id_to_token[token_id as usize];
+        match self.model {
+            GgufEmbeddedTokenizerModel::Llama => {
+                match token.ty {
+                    TokenType::Normal => {
+                        ret.append(&mut unescape_whitespace(&token.text));
+                    }
+                    TokenType::Unknown => {
+                        assert_eq!(token.text.len(), 3);
+                        ret.extend_from_slice(&[0xE2, 0x96, 0x85]);
+                    }
+                    TokenType::Byte => {
+                        ret.push(self.token_to_byte(token_id));
+                    }
+                    TokenType::Control | TokenType::UserDefined | TokenType::Unused => {}
+                }
+            }
+            _ => unimplemented!(),
+        }
+
+        ret
     }
 
     /// Returns the number of tokens in the tokenizer.
@@ -186,26 +208,9 @@ impl EmbeddedTokenizer {
     pub(crate) fn decode(&self, tokens: Vec<TokenId>, _skip_special_tokens: bool) -> Vec<u8> {
         let mut ret = vec![];
 
-        match self.model {
-            GgufEmbeddedTokenizerModel::Llama => {
-                for token_id in tokens {
-                    let token = &self.id_to_token[token_id as usize];
-                    match token.ty {
-                        TokenType::Normal => {
-                            ret.append(&mut unescape_whitespace(&token.text));
-                        }
-                        TokenType::Unknown => {
-                            assert_eq!(token.text.len(), 3);
-                            ret.extend_from_slice(&[0xE2, 0x96, 0x85]);
-                        }
-                        TokenType::Byte => {
-                            ret.push(self.token_to_byte(token_id));
-                        }
-                        TokenType::Control | TokenType::UserDefined | TokenType::Unused => {}
-                    }
-                }
-            }
-            _ => unimplemented!(),
+        for token_id in tokens {
+            let token = self.token(token_id as usize);
+            ret.extend_from_slice(&token);
         }
 
         // remove first b' '

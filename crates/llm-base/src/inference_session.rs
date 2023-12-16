@@ -393,11 +393,14 @@ impl InferenceSession {
             for &tk in batch {
                 let should_call_callback = Some(tk) != model.bot_token_id();
 
-                let mut token = {
-                    let mut tokens = self.tokens.clone();
-                    tokens.push(tk);
-
-                    get_newly_decoded_portion(model, tokens, &self.decoded_tokens)
+                let mut token = match model.tokenizer() {
+                    crate::Tokenizer::Embedded(_) => model.tokenizer().token(tk as usize).to_vec(),
+                    crate::Tokenizer::HuggingFace(_) => {
+                        let mut tokens = self.tokens.clone();
+                        tokens.push(tk);
+                        
+                        get_newly_decoded_portion(model, tokens, &self.decoded_tokens)
+                    }
                 };
 
                 if should_call_callback {
@@ -556,7 +559,16 @@ impl InferenceSession {
         if next_token as TokenId == model.eot_token_id() {
             Err(InferenceError::EndOfText)
         } else {
-            let res = get_newly_decoded_portion(model, self.tokens.clone(), &self.decoded_tokens);
+            let res = match model.tokenizer() {
+                crate::Tokenizer::Embedded(_) => {
+                    model.tokenizer().token(next_token as usize).to_vec()
+                }
+                crate::Tokenizer::HuggingFace(_) => get_newly_decoded_portion(
+                    model,
+                    self.tokens.clone(),
+                    &self.decoded_tokens,
+                ),
+            };
 
             self.decoded_tokens.append(&mut res.clone());
             Ok(res)

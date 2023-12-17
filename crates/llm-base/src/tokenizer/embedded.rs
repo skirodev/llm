@@ -130,7 +130,13 @@ impl EmbeddedTokenizer {
     }
 
     pub(crate) fn id(&self, token: &[u8]) -> Option<TokenId> {
-        self.token_to_id.get(token).copied()
+        self.token_to_id.get(&escape_whitespace(token)).copied()
+            .or_else(|| 
+                match token {
+                    &[byte] => Some(self.byte_to_token(byte)),
+                    _ => None
+                }
+            )
     }
 
     /// Converts a token index to the token it represents in this tokenizer.
